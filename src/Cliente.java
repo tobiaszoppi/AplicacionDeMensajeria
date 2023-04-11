@@ -1,5 +1,6 @@
 import java.io.*;
 import java.net.Socket;
+import java.sql.SQLException;
 import java.util.Scanner;
 
 /**
@@ -14,8 +15,8 @@ public class Cliente {
     /**
      * Crea un nuevo cliente.
      *
-     * @param socket         el socket utilizado para conectarse al servidor
-     * @param nombreDeUsuario el nombre de usuario del cliente
+     * @param socket              el socket utilizado para conectarse al servidor
+     * @param nombreDeUsuario     el nombre de usuario del cliente
      * @throws IOException si hay un problema al crear los flujos de entrada/salida
      */
     public Cliente(Socket socket, String nombreDeUsuario) throws IOException {
@@ -92,13 +93,25 @@ public class Cliente {
         Scanner scanner = new Scanner(System.in);
         System.out.println("Introduce tu nombre de usuario: ");
         String nombreDeUsuario = scanner.nextLine();
+        System.out.println("Introduce tu contraseña de usuario: ");
+        String contraseñaDeUsuario = scanner.nextLine();
 
-        // Conecta al servidor y crea un nuevo cliente
-        Socket socket = new Socket("localhost", 4444);
-        Cliente cliente = new Cliente(socket, nombreDeUsuario);
+        UserServices us = new UserServices();
+        try {
+            if (us.handleRegistration(nombreDeUsuario, contraseñaDeUsuario)){
+                // Conecta al servidor y crea un nuevo cliente
+                Socket socket = new Socket("localhost", 4444);
+                Cliente cliente = new Cliente(socket, nombreDeUsuario);
 
-        // Inicia los hilos para enviar y recibir mensajes
-        new Thread(cliente::enviarMensajes).start();
-        cliente.escucharMensajes();
+                // Inicia los hilos para enviar y recibir mensajes
+                new Thread(cliente::enviarMensajes).start();
+                cliente.escucharMensajes();
+            } else {
+                System.out.println("Error al registrarse/iniciar sesión");
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 }
