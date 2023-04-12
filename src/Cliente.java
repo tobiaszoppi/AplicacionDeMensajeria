@@ -1,79 +1,111 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
 import java.io.*;
 import java.net.Socket;
 import java.sql.SQLException;
-import java.util.Scanner;
 
-/**
- * Esta clase describe a un cliente que se conecta a un servidor de chat.
- */
 public class Cliente {
-    private final Socket socket;
-    private final BufferedReader lectorDeBuffer;
-    private final BufferedWriter escritorDeBuffer;
-    private final String nombreDeUsuario;
+    private Socket socket;
+    private BufferedReader lectorDeBuffer;
+    private BufferedWriter escritorDeBuffer;
+    private String nombreDeUsuario;
 
-    /**
-     * Crea un nuevo cliente.
-     *
-     * @param socket              el socket utilizado para conectarse al servidor
-     * @param nombreDeUsuario     el nombre de usuario del cliente
-     * @throws IOException si hay un problema al crear los flujos de entrada/salida
-     */
-    public Cliente(Socket socket, String nombreDeUsuario) throws IOException {
+    private JFrame ventana;
+    private JTextArea areaDeMensajes;
+    private JTextField campoDeTexto;
+
+    public Cliente(Socket socket) throws IOException {
+        // Conecta al servidor y crea un nuevo cliente
         this.socket = socket;
         this.escritorDeBuffer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
         this.lectorDeBuffer = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        this.nombreDeUsuario = nombreDeUsuario;
+        this.nombreDeUsuario = JOptionPane.showInputDialog("Introduce tu nombre de usuario:");
+
+        // Envía el nombre de usuario al servidor
+        escribirMensaje(nombreDeUsuario);
+
+        // Inicia el hilo para recibir mensajes del servidor
+        new Thread(this::escucharMensajes).start();
+
+        // Crea la interfaz gráfica
+        SwingUtilities.invokeLater(this::crearInterfazGrafica);
     }
 
     /**
-     * Envía mensajes al servidor.
-     *
-     * @throws IOException si hay un problema al enviar mensajes al servidor
+     * Crea la interfaz gráfica.
      */
-    public void enviarMensajes() {
-        try {
-            // Envía el nombre de usuario al servidor
-            escribirMensaje(nombreDeUsuario);
+    private void crearInterfazGrafica() {
+        // Crea la ventana principal
+        ventana = new JFrame(nombreDeUsuario);
+        ventana.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        ventana.setSize(600, 400);
 
-            // Lee la entrada del usuario y envía mensajes al servidor
-            Scanner scanner = new Scanner(System.in);
-            while (socket.isConnected()) {
-                String mensajeDelUsuario = scanner.nextLine();
-                escribirMensaje(mensajeDelUsuario);
-            }
+        // Crea el área de mensajes
+        areaDeMensajes = new JTextArea();
+        areaDeMensajes.setEditable(false);
+        JScrollPane scrollPane = new JScrollPane(areaDeMensajes);
+
+        // Crea el campo de texto y el botón de enviar
+        campoDeTexto = new JTextField();
+        campoDeTexto.addActionListener(new EnviarMensajeListener());
+        JButton botonEnviar = new JButton("Enviar");
+        botonEnviar.addActionListener(new EnviarMensajeListener());
+
+        // Crea el panel inferior con el campo de texto y el botón de enviar
+        JPanel panelInferior = new JPanel(new BorderLayout());
+        panelInferior.add(campoDeTexto, BorderLayout.CENTER);
+        panelInferior.add(botonEnviar, BorderLayout.EAST);
+
+        // Agrega los componentes a la ventana
+        ventana.getContentPane().add(scrollPane, BorderLayout.CENTER);
+        ventana.getContentPane().add(panelInferior, BorderLayout.SOUTH);
+
+        // Muestra la ventana
+        ventana.setVisible(true);
+    }
+
+
+    /**
+     * Envía un mensaje al servidor.
+     *
+     * @param mensaje el mensaje a enviar
+     * @throws IOException si hay un problema al enviar el mensaje
+     */
+    private void escribirMensaje(String mensaje) {
+        try {
+            escritorDeBuffer.write(mensaje);
+            escritorDeBuffer.newLine();
+            escritorDeBuffer.flush();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
     /**
-     * Escucha mensajes del servidor y los imprime en la consola.
+     * Escucha mensajes del servidor y los muestra en el área de mensajes.
      */
-    public void escucharMensajes() {
-        new Thread(() -> {
-            while (socket.isConnected()) {
-                try {
-                    String mensajeDelServidor = lectorDeBuffer.readLine();
-                    System.out.println(mensajeDelServidor);
-                } catch (IOException e) {
+    private void escucharMensajes() {
+        while (socket.isConnected()) {
+            try {
+                String mensajeDelServidor = lectorDeBuffer.readLine();
+                if (mensajeDelServidor != null && !mensajeDelServidor.isEmpty() && areaDeMensajes != null) {
+                    SwingUtilities.invokeLater(() -> {
+                        areaDeMensajes.append(mensajeDelServidor + "\n");
+                    });
+                } else {
                     cerrarConexion();
                 }
+            } catch (IOException e) {
+                System.err.println("Error al leer el mensaje del servidor: " + e.getMessage());
+                cerrarConexion();
+            } catch (Exception e) {
+                System.err.println("Error al procesar el mensaje del servidor: " + e.getMessage());
+                cerrarConexion();
             }
-        }).start();
+        }
     }
 
-    /**
-     * Escribe un mensaje en el buffer de salida y lo envía al servidor.
-     *
-     * @param mensaje el mensaje a enviar
-     * @throws IOException si hay un problema al enviar el mensaje
-     */
-    private void escribirMensaje(String mensaje) throws IOException {
-        escritorDeBuffer.write(mensaje);
-        escritorDeBuffer.newLine();
-        escritorDeBuffer.flush();
-    }
 
     /**
      * Cierra el socket y los flujos de entrada/salida.
@@ -88,30 +120,49 @@ public class Cliente {
         }
     }
 
-    public static void main(String[] args) throws IOException {
-        // Lee el nombre de usuario del cliente
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("Introduce tu nombre de usuario: ");
-        String nombreDeUsuario = scanner.nextLine();
-        System.out.println("Introduce tu contraseña de usuario: ");
-        String contraseñaDeUsuario = scanner.nextLine();
-
-        UserServices us = new UserServices();
-        try {
-            if (us.handleRegistration(nombreDeUsuario, contraseñaDeUsuario)){
-                // Conecta al servidor y crea un nuevo cliente
-                Socket socket = new Socket("localhost", 4444);
-                Cliente cliente = new Cliente(socket, nombreDeUsuario);
-
-                // Inicia los hilos para enviar y recibir mensajes
-                new Thread(cliente::enviarMensajes).start();
-                cliente.escucharMensajes();
-            } else {
-                System.out.println("Error al registrarse/iniciar sesión");
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+    /**
+     * Clase interna para manejar el envío de mensajes desde el campo de texto.
+     */
+    private class EnviarMensajeListener implements ActionListener {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            String mensaje = campoDeTexto.getText();
+            escribirMensaje(mensaje);
+            areaDeMensajes.append(nombreDeUsuario + ": " + mensaje + "\n"); // Agregamos el mensaje al área de mensajes
+            campoDeTexto.setText("");
         }
+    }
 
+    /**
+     * Método principal para ejecutar el cliente.
+     */
+    public static void main(String[] args) throws IOException {
+        // Conecta al servidor y crea un nuevo cliente
+        Socket socket = new Socket("localhost", 4444);
+        // Crea un nuevo cliente con el nombre de usuario proporcionado
+        Cliente cliente = new Cliente(socket);
+
+        // Muestra un diálogo para que el usuario introduzca su contraseña de usuario
+
+        String contraseñaDeUsuario = JOptionPane.showInputDialog("Introduce tu contraseña de usuario:");
+
+        // Si el usuario no cancela el diálogo, utiliza el nombre de usuario proporcionado
+        if (cliente.nombreDeUsuario != null) {
+            UserServices us = new UserServices();
+            try {
+                if (us.handleRegistration(cliente.nombreDeUsuario, contraseñaDeUsuario)){
+                    cliente.ventana.setTitle(cliente.nombreDeUsuario);
+                    cliente.escribirMensaje(" se ha unido a la sala.");
+
+                    // Inicia el hilo para recibir mensajes del servidor
+                    new Thread(cliente::escucharMensajes).start();
+                } else {
+                    System.out.println("Error al registrarse/iniciar sesión");
+                    System.exit(0);
+                }
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 }

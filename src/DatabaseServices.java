@@ -1,10 +1,10 @@
 import java.sql.SQLException;
 import java.util.List;
 
-public class DatabaseService {
+public class DatabaseServices {
     private final Database db;
 
-    public DatabaseService() {
+    public DatabaseServices() {
         try {
             db = Database.getInstance();
         } catch (SQLException e) {

@@ -1,10 +1,10 @@
 import java.sql.SQLException;
 
 public class UserServices {
-    private final DatabaseService db;
+    private final DatabaseServices db;
 
     public UserServices() {
-        db = new DatabaseService();
+        db = new DatabaseServices();
     }
 
     public boolean handleRegistration(String username, String password) throws SQLException {
