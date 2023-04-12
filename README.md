@@ -19,3 +19,5 @@ La clase ClienteHandler es una clase interna de la clase Servidor y representa u
 Su función es manejar las solicitudes de un cliente en un hilo separado. 
 Tiene un constructor que toma el socket de un cliente y tiene un método run() que se encarga de leer los mensajes del cliente y 
 enviarlos a todos los clientes conectados al servidor.
+
+![demo](https://user-images.githubusercontent.com/87771971/231451726-bf02a3c0-0b84-417e-80ef-64926b2f5c34.png)
