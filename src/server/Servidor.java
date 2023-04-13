@@ -1,6 +1,12 @@
+package server;
+
+import user.ClienteHandler;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Representa un servidor que acepta conexiones de clientes y maneja las solicitudes en hilos separados.
@@ -8,9 +14,11 @@ import java.net.Socket;
 public class Servidor {
 
     private ServerSocket serverSocket;
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+
 
     /**
-     * Crea una instancia de Servidor con el socket del servidor.
+     * Crea una instancia de server.Servidor con el socket del servidor.
      *
      * @param serverSocket El socket del servidor.
      */
@@ -29,8 +37,8 @@ public class Servidor {
 
                 // Manejar la conexión del cliente en un hilo separado
                 ClienteHandler clienteHandler = new ClienteHandler(socket);
-                Thread thread = new Thread(clienteHandler);
-                thread.start();
+
+                executor.submit(clienteHandler);
             }
         } catch (IOException e) {
             cerrarServidor();
@@ -43,6 +51,7 @@ public class Servidor {
     public void cerrarServidor() {
         try {
             if (serverSocket != null) {
+                executor.shutdownNow();
                 serverSocket.close();
             }
         } catch (IOException e) {

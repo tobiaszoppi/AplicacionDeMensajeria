@@ -1,3 +1,7 @@
+package user;
+
+import server.DatabaseServices;
+
 import java.sql.SQLException;
 
 public class UserServices {
@@ -7,7 +11,7 @@ public class UserServices {
         db = new DatabaseServices();
     }
 
-    public boolean handleRegistration(String username, String password) throws SQLException {
+    public boolean handleAccess(String username, String password) throws SQLException {
 
         if (username.isBlank() || password.isBlank()) {
            throw new RuntimeException("Campos vacios");
