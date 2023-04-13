@@ -14,8 +14,7 @@ import java.util.concurrent.Executors;
 public class Servidor {
 
     private ServerSocket serverSocket;
-    private final ExecutorService executor = Executors.newSingleThreadExecutor();
-
+    private final ExecutorService executor = Executors.newFixedThreadPool(10);
 
     /**
      * Crea una instancia de server.Servidor con el socket del servidor.
@@ -38,7 +37,7 @@ public class Servidor {
                 // Manejar la conexión del cliente en un hilo separado
                 ClienteHandler clienteHandler = new ClienteHandler(socket);
 
-                executor.submit(clienteHandler);
+                executor.execute(clienteHandler);
             }
         } catch (IOException e) {
             cerrarServidor();
@@ -50,20 +49,16 @@ public class Servidor {
      */
     public void cerrarServidor() {
         try {
-            if (serverSocket != null) {
-                executor.shutdownNow();
-                serverSocket.close();
-            }
+            serverSocket.close();
+            executor.shutdown();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     public static void main(String[] args) throws IOException {
-        // Iniciar el servidor en el puerto 4444
-        try (ServerSocket serverSocket = new ServerSocket(4444)) {
-            Servidor servidor = new Servidor(serverSocket);
-            servidor.abrirServidor();
-        }
+        ServerSocket serverSocket = new ServerSocket(4444);
+        Servidor servidor = new Servidor(serverSocket);
+        servidor.abrirServidor();
     }
 }

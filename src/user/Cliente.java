@@ -98,7 +98,7 @@ public class Cliente {
         @Override
         public void actionPerformed(ActionEvent e) {
             String mensaje = ventana.campoTexto.getText();
-            ventana.agregarMensajePropio(mensaje, nombreDeUsuario);
+            ventana.agregarMensaje(mensaje);
             try {
                 escribirMensaje(mensaje);
             } catch (IOException ex) {
