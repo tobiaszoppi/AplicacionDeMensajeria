@@ -124,6 +124,34 @@ public class Database {
         }
     }
 
+    // Preguntar si el usuario es admin.
+    protected boolean isAdmin(String username) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement("SELECT isAdmin FROM users WHERE username = ?")) {
+            statement.setString(1, username);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next() && resultSet.getBoolean("isAdmin")) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    // Set admin
+    protected boolean setAdmin(String username) throws SQLException {
+        if (isAdmin(username)) {
+            try (PreparedStatement statement = connection.prepareStatement("UPDATE users SET isAdmin = 0 WHERE username = ?")) {
+                statement.setString(1, username);
+                return statement.executeUpdate() == 1;
+            }
+        } else {
+            try (PreparedStatement statement = connection.prepareStatement("UPDATE users SET isAdmin = 1 WHERE username = ?")) {
+                statement.setString(1, username);
+                return statement.executeUpdate() == 1;
+            }
+        }
+    }
+
     // Auditor:
     public boolean logAction(String username, String action, String detail) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement("INSERT INTO auditor (timestamp, username, action, detail) VALUES (?, ?, ?, ?)")) {

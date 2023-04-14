@@ -28,4 +28,26 @@ public class UserServices {
         return db.createUser(username, password);
     }
 
+    protected boolean isAdmin(String username) throws SQLException {
+        return db.isAdmin(username);
+    }
+
+    protected boolean setAdmin(String username) throws SQLException {
+        return db.setAdmin(username);
+    }
+
+    protected boolean isActive(String username) throws SQLException {
+        return db.isActive(username);
+    }
+
+    protected boolean setIsActive(String username, boolean variant) throws SQLException {
+        return db.setIsActive(username,variant);
+    }
+
+    protected boolean kick(String username) throws SQLException {
+        if (db.isActive(username)) {
+            return db.setIsActive(username, false);
+        }
+        return false;
+    }
 }

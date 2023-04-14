@@ -38,4 +38,12 @@ public class DatabaseServices {
     public boolean setIsActive(String username, boolean isActive) throws SQLException {
         return db.setIsActive(username,isActive);
     }
+
+    public boolean isAdmin(String username) throws SQLException {
+        return db.isAdmin(username);
+    }
+
+    public boolean setAdmin(String username) throws SQLException {
+        return db.setAdmin(username);
+    }
 }

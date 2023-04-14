@@ -41,7 +41,6 @@ public class Cliente {
     }
 
     public void close() {
-        ventana.dispose();
         cerrarConexion();
         executor.shutdownNow();
     }
@@ -69,6 +68,7 @@ public class Cliente {
                     String finalMensaje = mensaje;
                     SwingUtilities.invokeLater(() -> {
                         ventana.agregarMensaje(finalMensaje);
+                        ventana.notificarNuevoMensaje();
                     });
                 }
             } catch (IOException e) {
