@@ -11,7 +11,7 @@ public class Database {
 
     private static String url = "jdbc:mysql://127.0.0.1:3306/mensajeriaapp";
     private static String user = "root";
-    private static String pass = "643851";
+    private static String pass = "";
 
     public Database() throws SQLException {
         connection = DriverManager.getConnection(url, user, pass);
